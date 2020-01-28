@@ -8,6 +8,7 @@ from keras.datasets import mnist
 from keras.utils import to_categorical
 from keras.layers import Dense, Dropout
 from keras.optimizers import Adam
+import tensorflow as tf
 import numpy as np
 import h5py
 import cv2
@@ -45,8 +46,10 @@ emot = ["anger", "disgust", "fear", "happy", "sad", "surprise", "neutral"]
 #-=-=-=-=-=-=-=-=-=-=-#
 #   CHARGER MODÈLE    #
 #-=-=-=-=-=-=-=-=-=-=-#
-
+keras.backend.clear_session()
 model = load_model("model.h5")
+graph = tf.get_default_graph()
+
 model.summary()
 model._make_predict_function()
 
@@ -78,20 +81,22 @@ def cam():
 
 	prediction = ""
 	try:
-		visage = Image.fromarray(visage)
-		visage = visage.convert("L")
-		visage = visage.resize((48, 48))
-		mon_tab = np.array(visage)
-		mon_tab = mon_tab.astype("float32")
-		mon_tab /= 255
-		mon_tab = np.expand_dims(mon_tab,axis=0)
-		mon_tab = np.expand_dims(mon_tab,axis=3)
+		global graph
+		with graph.as_default():
+			visage = Image.fromarray(visage)
+			visage = visage.convert("L")
+			visage = visage.resize((48, 48))
+			mon_tab = np.array(visage)
+			mon_tab = mon_tab.astype("float32")
+			mon_tab /= 255
+			mon_tab = np.expand_dims(mon_tab,axis=0)
+			mon_tab = np.expand_dims(mon_tab,axis=3)
 
-		#Predire
-		prediction = model.predict(mon_tab)
-		prediction = np.argmax(prediction)
-		prediction = emot[prediction]
-		print(prediction)
+			#Predire
+			prediction = model.predict(mon_tab)
+			prediction = np.argmax(prediction)
+			prediction = emot[prediction]
+			print(prediction)
 
 	except Exception:
 		return render_template('page.html')
